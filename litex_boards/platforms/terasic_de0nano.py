@@ -115,6 +115,18 @@ _io = [
         "F15 F16 F14 G16 G15"),
         IOStandard("3.3-V LVTTL")
     ),
+    ("spw_node", 0,
+        Subsignal("d_input", Pins("JP1:1")),
+        Subsignal("s_input", Pins("JP1:3")),
+        Subsignal("d_output", Pins("JP1:5")),
+        Subsignal("s_output", Pins("JP1:7")),
+        IOStandard("3.3-V LVTTL")
+    ),
+    ("uart_bridge", 0,
+        Subsignal("tx", Pins("JP1:13")),
+        Subsignal("rx", Pins("JP1:15")),
+        IOStandard("3.3-V LVTTL")
+    )
 ]
 
 # Connectors ---------------------------------------------------------------------------------------
