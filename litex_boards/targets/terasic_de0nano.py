@@ -10,6 +10,7 @@ import os
 import argparse
 
 from migen import *
+from litex.build.generic_platform import *
 from migen.genlib.resetsync import AsyncResetSynchronizer
 
 from litex.build.io import DDROutput
@@ -20,9 +21,12 @@ from litex.soc.cores.clock import CycloneIVPLL
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
 from litex.soc.cores.led import LedChaser
+from litescope import LiteScopeAnalyzer
 
 from litedram.modules import IS42S16160
 from litedram.phy import GENSDRPHY, HalfRateGENSDRPHY
+
+from litex_amaranth_spacewire import SpWNode
 
 # CRG ----------------------------------------------------------------------------------------------
 
@@ -64,7 +68,7 @@ class BaseSoC(SoCCore):
 
         # SoCCore ----------------------------------------------------------------------------------
         SoCCore.__init__(self, platform, sys_clk_freq,
-            ident = "LiteX SoC on DE0-Nano",
+            ident          = "LiteX SoC on DE0-Nano",
             **kwargs)
 
         # CRG --------------------------------------------------------------------------------------
@@ -86,14 +90,16 @@ class BaseSoC(SoCCore):
                 pads         = platform.request_all("user_led"),
                 sys_clk_freq = sys_clk_freq)
 
+        self.submodules.spw_node = spw_node = SpWNode(platform, pads=platform.request("spw_node"), time_master=True)
+
 # Build --------------------------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="LiteX SoC on DE0-Nano")
-    parser.add_argument("--build",        action="store_true", help="Build bitstream.")
-    parser.add_argument("--load",         action="store_true", help="Load bitstream.")
-    parser.add_argument("--sys-clk-freq", default=50e6,        help="System clock frequency.")
-    parser.add_argument("--sdram-rate",   default="1:1",       help="SDRAM Rate (1:1 Full Rate or 1:2 Half Rate).")
+    parser.add_argument("--build",        action="store_true", help="Build bitstream")
+    parser.add_argument("--load",         action="store_true", help="Load bitstream")
+    parser.add_argument("--sys-clk-freq", default=50e6,        help="System clock frequency (default: 50MHz)")
+    parser.add_argument("--sdram-rate",   default="1:1",       help="SDRAM Rate: 1:1 Full Rate (default), 1:2 Half Rate")
     builder_args(parser)
     soc_core_args(parser)
     args = parser.parse_args()
@@ -103,7 +109,9 @@ def main():
         sdram_rate   = args.sdram_rate,
         **soc_core_argdict(args)
     )
-    builder = Builder(soc, **builder_argdict(args))
+    bargs = builder_argdict(args)
+    bargs['csr_csv'] = "csr.csv"
+    builder = Builder(soc, **bargs)
     builder.build(run=args.build)
 
     if args.load:
